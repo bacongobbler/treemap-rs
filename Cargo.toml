@@ -1,0 +1,8 @@
+[package]
+name = "treemap"
+version = "0.1.0"
+authors = ["Matthew Fisher <matt.fisher@microsoft.com>"]
+edition = "2018"
+
+[dependencies]
+ord_subset = "3"
