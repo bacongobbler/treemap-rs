@@ -24,7 +24,7 @@ trait Mappable {
 /// Model object used by MapLayout to represent data for a treemap.
 trait MapModel {
     /// Get the list of items in this model. It returns an array of the Mappable objects in this MapModel.
-    fn get_items(&self) -> &mut[Box<Mappable>];
+    fn get_items(&self) -> &mut [Box<Mappable>];
 }
 
 /// The interface for the treemap layout algorithm.
@@ -139,16 +139,41 @@ impl Mappable for MapItem {
 }
 
 struct TreemapLayout {
-    mid: i32,
+    mid: usize,
 }
 
 impl TreemapLayout {
-    pub fn layout_items(&mut self, items: &mut[Box<Mappable>], bounds: Rect) {
+    pub fn layout_items(&mut self, items: &mut [Box<Mappable>], bounds: Rect) {
         let sorted_items = sort_descending(items);
-        let end = (sorted_items.len() - 1) as i32;
+        let end = sorted_items.len() - 1;
         self.layout_items_at(sorted_items, 0, end, bounds);
     }
-    pub fn layout_items_at(&mut self, items: &mut[Box<Mappable>], start: i32, end: i32, bounds: Rect) {
+
+    pub fn layout_items_at(
+        &mut self,
+        items: &mut [Box<Mappable>],
+        start: usize,
+        end: usize,
+        bounds: Rect,
+    ) {
+        if start > end {
+            return;
+        }
+        if start == end {
+            items[start].set_bounds_from_rect(bounds);
+        }
+
+        self.mid = start;
+        while self.mid < end {
+            if highest_aspect(items, start, self.mid, bounds)
+                > highest_aspect(items, start, self.mid + 1, bounds)
+            {
+                self.mid += 1;
+            } else {
+                let new_bounds = layout_row(items, start, self.mid, bounds);
+                self.layout_items_at(items, self.mid + 1, end, new_bounds);
+            }
+        }
     }
 }
 
@@ -158,17 +183,21 @@ impl Layout for TreemapLayout {
     }
 }
 
-fn sort_descending(items: &mut[Box<Mappable>]) -> &mut[Box<Mappable>] {
+fn sort_descending(items: &mut [Box<Mappable>]) -> &mut [Box<Mappable>] {
     if items.len() == 0 {
-        return items
+        return items;
     }
     quick_sort_desc(items, 0, items.len() - 1)
 }
 
-fn quick_sort_desc(input: &mut[Box<Mappable>], lower_index: usize, higher_index: usize) -> &mut[Box<Mappable>] {
+fn quick_sort_desc(
+    input: &mut [Box<Mappable>],
+    lower_index: usize,
+    higher_index: usize,
+) -> &mut [Box<Mappable>] {
     let mut i = lower_index;
     let mut j = higher_index;
-    let pivot: f64 = input[lower_index+(higher_index-lower_index)/2].get_size();
+    let pivot: f64 = input[lower_index + (higher_index - lower_index) / 2].get_size();
     while i <= j {
         /**
          * In each iteration, we will identify a number from left side which
@@ -180,7 +209,7 @@ fn quick_sort_desc(input: &mut[Box<Mappable>], lower_index: usize, higher_index:
             i += 1;
         }
         while input[j].get_size() < pivot {
-           j -= 1;
+            j -= 1;
         }
         if i <= j {
             input.swap(i, j);
@@ -190,4 +219,16 @@ fn quick_sort_desc(input: &mut[Box<Mappable>], lower_index: usize, higher_index:
         }
     }
     input
+}
+
+fn highest_aspect(items: &[Box<Mappable>], start: usize, end: usize, bounds: Rect) {
+    layout_row(items, start, end, bounds);
+    let max = std::f64::MIN;
+    for i in start..end + 1 {
+        let aspect_ratio = items[i].get_bounds().aspect_ratio();
+        if (aspect_ratio > max {
+            max = aspect_ratio;
+        }
+    }
+    max
 }
