@@ -149,31 +149,91 @@ impl TreemapLayout {
         self.layout_items_at(sorted_items, 0, end, bounds);
     }
 
-    pub fn layout_items_at(
-        &mut self,
-        items: &mut [Box<Mappable>],
-        start: usize,
-        end: usize,
-        bounds: Rect,
-    ) {
+    pub fn layout_items_at(&mut self, items: &mut [Box<Mappable>], start: usize, end: usize, bounds: Rect) {
         if start > end {
             return;
         }
         if start == end {
-            items[start].set_bounds_from_rect(bounds);
+            items[start].set_bounds_from_points(bounds.x, bounds.y, bounds.w, bounds.h);
         }
 
         self.mid = start;
         while self.mid < end {
-            if highest_aspect(items, start, self.mid, bounds)
-                > highest_aspect(items, start, self.mid + 1, bounds)
+            if self.highest_aspect(items, start, self.mid, &bounds)
+                > self.highest_aspect(items, start, self.mid + 1, &bounds)
             {
                 self.mid += 1;
             } else {
-                let new_bounds = layout_row(items, start, self.mid, bounds);
+                let new_bounds = self.layout_row(items, start, self.mid, &bounds);
                 self.layout_items_at(items, self.mid + 1, end, new_bounds);
             }
         }
+    }
+
+    fn highest_aspect(&self, items: &mut [Box<Mappable>], start: usize, end: usize, bounds: &Rect) -> f64 {
+        self.layout_row(items, start, end, bounds);
+        let mut max = std::f64::MIN;
+        for i in start..end+1 {
+            let aspect_ratio = items[i].get_bounds().aspect_ratio();
+            if aspect_ratio > max {
+                max = aspect_ratio;
+            }
+        }
+        max
+    }
+
+    pub fn layout_row(&self, items: &mut [Box<Mappable>], start: usize, end: usize, bounds: &Rect) -> Rect {
+        let is_horizontal = bounds.w > bounds.h;
+        let total = bounds.w * bounds.h;
+        let row_size = self.total_item_size_with_range(items, start, end);
+        let row_ratio = row_size / total;
+        let mut offset = 0.0;
+
+        for i in start..end+1 {
+            let mut r = Rect::new();
+            let ratio = items[i].get_size() / row_size;
+
+            if is_horizontal {
+                r.x = bounds.x;
+                r.w = bounds.w * row_ratio;
+                r.y = bounds.y + bounds.h * offset;
+                r.h = bounds.h * ratio;
+            } else {
+                r.x = bounds.x + bounds.w * offset;
+                r.w = bounds.w * ratio;
+                r.y = bounds.y;
+                r.h = bounds.h * row_ratio;
+            }
+            items[i].set_bounds_from_rect(r);
+            offset += ratio;
+        }
+
+        if is_horizontal {
+            return Rect {
+                x: bounds.x + bounds.w * row_ratio,
+                y: bounds.y,
+                w: bounds.w - bounds.w * row_ratio,
+                h: bounds.h,
+            };
+        }
+        return Rect {
+            x: bounds.x,
+            y: bounds.y + bounds.h * row_ratio,
+            w: bounds.w,
+            h: bounds.h - bounds.h * row_ratio,
+        };
+    }
+
+    pub fn total_item_size(&self, items: &[Box<Mappable>]) -> f64 {
+        self.total_item_size_with_range(items, 0, items.len())
+    }
+
+    pub fn total_item_size_with_range(&self, items: &[Box<Mappable>], start: usize, end: usize) -> f64 {
+        let mut sum = 0.0;
+        for i in start..end {
+            sum += items[i].get_size();
+        }
+        sum
     }
 }
 
@@ -199,12 +259,10 @@ fn quick_sort_desc(
     let mut j = higher_index;
     let pivot: f64 = input[lower_index + (higher_index - lower_index) / 2].get_size();
     while i <= j {
-        /**
-         * In each iteration, we will identify a number from left side which
-         * is greater then the pivot value, and also we will identify a number
-         * from right side which is less then the pivot value. Once the search
-         * is done, then we exchange both numbers.
-         */
+        // In each iteration, we will identify a number from left side which
+        // is greater then the pivot value, and also we will identify a number
+        // from right side which is less then the pivot value. Once the search
+        // is done, then we exchange both numbers.
         while input[i].get_size() > pivot {
             i += 1;
         }
@@ -219,16 +277,4 @@ fn quick_sort_desc(
         }
     }
     input
-}
-
-fn highest_aspect(items: &[Box<Mappable>], start: usize, end: usize, bounds: Rect) {
-    layout_row(items, start, end, bounds);
-    let max = std::f64::MIN;
-    for i in start..end + 1 {
-        let aspect_ratio = items[i].get_bounds().aspect_ratio();
-        if (aspect_ratio > max {
-            max = aspect_ratio;
-        }
-    }
-    max
 }
