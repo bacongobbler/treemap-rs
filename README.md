@@ -35,3 +35,42 @@ This can be useful for a variety of purposes:
 
 - visualizing hierarchal structures, such as showing how much space each directory uses in a file drive
 - generating a floor map given an area on how each room should be subdivided (bathrooms would need a smaller amount of space than a living room, for example)
+
+## Example
+
+Add `treemap` to Cargo.toml:
+
+```toml
+[dependencies]
+treemap = "0.1.0"
+```
+
+```rust
+extern crate treemap;
+
+use treemap::{MapItem, Mappable, Rect, TreemapLayout};
+
+fn main() {
+    let mut layout = TreemapLayout::new();
+    let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
+    let mut items: Vec<Box<Mappable>> = vec![
+        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
+        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
+        Box::new(MapItem::new_from_size_and_order(4.0, 0)),
+        Box::new(MapItem::new_from_size_and_order(3.0, 0)),
+        Box::new(MapItem::new_from_size_and_order(2.0, 0)),
+        Box::new(MapItem::new_from_size_and_order(2.0, 0)),
+        Box::new(MapItem::new_from_size_and_order(1.0, 0)),
+    ];
+
+    layout.layout_items_at(&mut items, 0, 6, bounds);
+
+    for i in 0..7 {
+        println!("Item {} x={}", i, items[i].get_bounds().x);
+        println!("Item {} y={}", i, items[i].get_bounds().y);
+        println!("Item {} w={}", i, items[i].get_bounds().w);
+        println!("Item {} h={}", i, items[i].get_bounds().h);
+        println!("------");
+    }
+}
+```
