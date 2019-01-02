@@ -2,6 +2,12 @@
 name = "treemap"
 version = "0.1.0"
 authors = ["Matthew Fisher <matt.fisher@microsoft.com>"]
+description = "Implementation of the Squarified Treemap algorithm"
+documentation = "https://github.com/bacongobbler/treemap-rs#readme"
+homepage = "https://github.com/bacongobbler/treemap-rs"
+repository = "https://github.com/bacongobbler/treemap-rs"
+readme = "README.md"
+license = "MIT"
 edition = "2018"
 
 [dependencies]
