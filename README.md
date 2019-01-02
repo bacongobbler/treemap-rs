@@ -2,7 +2,7 @@
 
 Implements the Squarified Treemap algorithm published by Mark Bruls, Kees Huizing, and Jarke J. van Wijk.
 
-The Squarified Treemap algorithm paper can be found here: https://www.win.tue.nl/~vanwijk/stm.pdf
+The Squarified Treemap algorithm paper can be found here: <https://www.win.tue.nl/~vanwijk/stm.pdf>
 
 ## Uses
 
