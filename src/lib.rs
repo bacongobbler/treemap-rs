@@ -9,7 +9,7 @@ use ord_subset::OrdSubsetIterExt;
 /// - order: the sort order of the item.
 /// - depth: the depth in hierarchy.
 /// - bounds: the bounding rectangle of the item in the map.
-trait Mappable {
+pub trait Mappable {
     fn get_size(&self) -> f64;
     fn set_size(&mut self, size: f64);
     fn get_bounds(&self) -> &Rect;
@@ -22,28 +22,32 @@ trait Mappable {
 }
 
 /// Model object used by MapLayout to represent data for a treemap.
-trait MapModel {
+pub trait MapModel {
     /// Get the list of items in this model. It returns an array of the Mappable objects in this MapModel.
-    fn get_items(&self) -> &mut [Box<Mappable>];
+    fn get_items(&self) -> Vec<Box<Mappable>>;
 }
 
 /// The interface for the treemap layout algorithm.
-trait Layout {
+pub trait Layout {
     /// Arrange the items in the given MapModel to fill the given rectangle.
     ///
     /// # Parameters
     ///
     /// - model: The MapModel.
     /// - bounds: The bounding rectangle for the layout.
-    fn layout(&mut self, model: &MapModel, bounds: Rect);
+    fn layout(&mut self, model: &mut Box<MapModel>, bounds: Rect);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
     pub w: f64,
     pub h: f64,
+}
+
+impl Clone for Rect {
+    fn clone(&self) -> Rect { *self }
 }
 
 impl Rect {
@@ -75,11 +79,16 @@ impl Rect {
     }
 }
 
+#[derive(Copy)]
 pub struct MapItem {
     size: f64,
     bounds: Rect,
     order: i32,
     depth: i32,
+}
+
+impl Clone for MapItem {
+    fn clone(&self) -> MapItem { *self }
 }
 
 impl MapItem {
@@ -138,18 +147,24 @@ impl Mappable for MapItem {
     }
 }
 
-struct TreemapLayout {
-    mid: usize,
+pub struct TreemapLayout {
+    pub mid: usize,
 }
 
 impl TreemapLayout {
-    pub fn layout_items(&mut self, items: &mut [Box<Mappable>], bounds: Rect) {
-        let sorted_items = sort_descending(items);
-        let end = sorted_items.len() - 1;
-        self.layout_items_at(sorted_items, 0, end, bounds);
+    pub fn new() -> TreemapLayout {
+        TreemapLayout {
+            mid: 0,
+        }
     }
 
-    pub fn layout_items_at(&mut self, items: &mut [Box<Mappable>], start: usize, end: usize, bounds: Rect) {
+    pub fn layout_items(&mut self, mut items: &mut Vec<Box<Mappable>>, bounds: Rect) {
+        sort_descending(&mut items);
+        let end = items.len() - 1;
+        self.layout_items_at(&mut items, 0, end, bounds);
+    }
+
+    pub fn layout_items_at(&mut self, mut items: &mut Vec<Box<Mappable>>, start: usize, end: usize, bounds: Rect) {
         if start > end {
             return;
         }
@@ -159,19 +174,17 @@ impl TreemapLayout {
 
         self.mid = start;
         while self.mid < end {
-            if self.highest_aspect(items, start, self.mid, &bounds)
-                > self.highest_aspect(items, start, self.mid + 1, &bounds)
-            {
+            if self.highest_aspect(&mut items, start, self.mid, &bounds) > self.highest_aspect(&mut items, start, self.mid + 1, &bounds) {
                 self.mid += 1;
             } else {
-                let new_bounds = self.layout_row(items, start, self.mid, &bounds);
-                self.layout_items_at(items, self.mid + 1, end, new_bounds);
+                let new_bounds = self.layout_row(&mut items, start, self.mid, &bounds);
+                self.layout_items_at(&mut items, self.mid + 1, end, new_bounds);
             }
         }
     }
 
-    fn highest_aspect(&self, items: &mut [Box<Mappable>], start: usize, end: usize, bounds: &Rect) -> f64 {
-        self.layout_row(items, start, end, bounds);
+    pub fn highest_aspect(&self, mut items: &mut Vec<Box<Mappable>>, start: usize, end: usize, bounds: &Rect) -> f64 {
+        self.layout_row(&mut items, start, end, bounds);
         let mut max = std::f64::MIN;
         for i in start..end+1 {
             let aspect_ratio = items[i].get_bounds().aspect_ratio();
@@ -182,10 +195,10 @@ impl TreemapLayout {
         max
     }
 
-    pub fn layout_row(&self, items: &mut [Box<Mappable>], start: usize, end: usize, bounds: &Rect) -> Rect {
+    pub fn layout_row(&self, items: &mut Vec<Box<Mappable>>, start: usize, end: usize, bounds: &Rect) -> Rect {
         let is_horizontal = bounds.w > bounds.h;
         let total = bounds.w * bounds.h;
-        let row_size = self.total_item_size_with_range(items, start, end);
+        let row_size = self.total_item_size_with_range(&items, start, end);
         let row_ratio = row_size / total;
         let mut offset = 0.0;
 
@@ -224,11 +237,15 @@ impl TreemapLayout {
         };
     }
 
-    pub fn total_item_size(&self, items: &[Box<Mappable>]) -> f64 {
-        self.total_item_size_with_range(items, 0, items.len())
+    pub fn total_item_size(&self, items: &Vec<Box<Mappable>>) -> f64 {
+        let mut sum = 0.0;
+        for i in 0..items.len() {
+            sum += items[i].get_size();
+        }
+        sum
     }
 
-    pub fn total_item_size_with_range(&self, items: &[Box<Mappable>], start: usize, end: usize) -> f64 {
+    pub fn total_item_size_with_range(&self, items: &Vec<Box<Mappable>>, start: usize, end: usize) -> f64 {
         let mut sum = 0.0;
         for i in start..end {
             sum += items[i].get_size();
@@ -238,43 +255,12 @@ impl TreemapLayout {
 }
 
 impl Layout for TreemapLayout {
-    fn layout(&mut self, model: &MapModel, bounds: Rect) {
-        self.layout_items(model.get_items(), bounds)
+    fn layout(&mut self, model: &mut Box<MapModel>, bounds: Rect) {
+        let mut items = model.get_items();
+        self.layout_items(&mut items, bounds)
     }
 }
 
-fn sort_descending(items: &mut [Box<Mappable>]) -> &mut [Box<Mappable>] {
-    if items.len() == 0 {
-        return items;
-    }
-    quick_sort_desc(items, 0, items.len() - 1)
-}
-
-fn quick_sort_desc(
-    input: &mut [Box<Mappable>],
-    lower_index: usize,
-    higher_index: usize,
-) -> &mut [Box<Mappable>] {
-    let mut i = lower_index;
-    let mut j = higher_index;
-    let pivot: f64 = input[lower_index + (higher_index - lower_index) / 2].get_size();
-    while i <= j {
-        // In each iteration, we will identify a number from left side which
-        // is greater then the pivot value, and also we will identify a number
-        // from right side which is less then the pivot value. Once the search
-        // is done, then we exchange both numbers.
-        while input[i].get_size() > pivot {
-            i += 1;
-        }
-        while input[j].get_size() < pivot {
-            j -= 1;
-        }
-        if i <= j {
-            input.swap(i, j);
-            // move index to next position on both sides
-            i += 1;
-            j -= 1;
-        }
-    }
-    input
+pub fn sort_descending(mut items: &mut Vec<Box<Mappable>>) {
+    items.sort_by(|a, b| b.get_size().partial_cmp(&a.get_size()).unwrap());
 }
