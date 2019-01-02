@@ -1,6 +1,6 @@
 extern crate treemap;
 
-use treemap::{Rect, MapItem, Mappable, TreemapLayout};
+use treemap::{MapItem, Mappable, Rect, TreemapLayout};
 
 #[test]
 fn treemap() {
@@ -13,7 +13,7 @@ fn treemap() {
         Box::new(MapItem::new_from_size_and_order(3.0, 0)),
         Box::new(MapItem::new_from_size_and_order(2.0, 0)),
         Box::new(MapItem::new_from_size_and_order(2.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(1.0, 0))
+        Box::new(MapItem::new_from_size_and_order(1.0, 0)),
     ];
 
     layout.layout_items_at(&mut items, 0, 6, bounds);
@@ -29,8 +29,12 @@ fn treemap() {
 
 #[test]
 fn sort_descending() {
-    let input = [24.0, 2.0, 45.0, 20.0, 56.0, 75.0, 2.0, 56.0, 99.0, 53.0, 12.0];
-    let output = [99.0, 75.0, 56.0, 56.0, 53.0, 45.0, 24.0, 20.0, 12.0, 2.0, 2.0];
+    let input = [
+        24.0, 2.0, 45.0, 20.0, 56.0, 75.0, 2.0, 56.0, 99.0, 53.0, 12.0,
+    ];
+    let output = [
+        99.0, 75.0, 56.0, 56.0, 53.0, 45.0, 24.0, 20.0, 12.0, 2.0, 2.0,
+    ];
     let mut items: Vec<Box<Mappable>> = Default::default();
     for i in input.iter() {
         items.push(Box::new(MapItem::new_from_size_and_order(*i, 0)));
@@ -51,9 +55,9 @@ fn highest_aspect() {
         Box::new(MapItem::new_from_size_and_order(4.0, 0)),
     ];
 
-    assert_eq!(4.0/1.5, layout.highest_aspect(&mut items, 0, 0, &bounds));
-    assert_eq!(3.0/2.0, layout.highest_aspect(&mut items, 0, 1, &bounds));
-    assert_eq!(4.0/1.0, layout.highest_aspect(&mut items, 0, 2, &bounds));
+    assert_eq!(4.0 / 1.5, layout.highest_aspect(&mut items, 0, 1, &bounds));
+    assert_eq!(3.0 / 2.0, layout.highest_aspect(&mut items, 0, 2, &bounds));
+    assert_eq!(4.0 / 1.0, layout.highest_aspect(&mut items, 0, 3, &bounds));
 }
 
 #[test]
@@ -66,12 +70,10 @@ fn layout_row_horizontal() {
         Box::new(MapItem::new_from_size_and_order(4.0, 0)),
     ];
 
-    let output1 = vec![
-        Rect::new_from_points(0.0, 0.0, 1.5, 4.0)
-    ];
+    let output1 = vec![Rect::new_from_points(0.0, 0.0, 1.5, 4.0)];
     let output2 = vec![
         Rect::new_from_points(0.0, 0.0, 3.0, 2.0),
-        Rect::new_from_points(0.0, 2.0, 3.0, 2.0)
+        Rect::new_from_points(0.0, 2.0, 3.0, 2.0),
     ];
     let output3 = vec![
         Rect::new_from_points(0.0, 0.0, 4.0, 1.5),
@@ -79,7 +81,7 @@ fn layout_row_horizontal() {
         Rect::new_from_points(0.0, 3.0, 4.0, 1.0),
     ];
 
-    let rect1 = layout.layout_row(&mut items, 0, 0, &bounds);
+    let rect1 = layout.layout_row(&mut items, 0, 1, &bounds);
 
     assert_eq!(1.5, rect1.x);
     assert_eq!(0.0, rect1.y);
@@ -91,7 +93,7 @@ fn layout_row_horizontal() {
     assert_eq!(output1[0].w, items[0].get_bounds().w);
     assert_eq!(output1[0].h, items[0].get_bounds().h);
 
-    let rect2 = layout.layout_row(&mut items, 0, 1, &bounds);
+    let rect2 = layout.layout_row(&mut items, 0, 2, &bounds);
 
     assert_eq!(3.0, rect2.x);
     assert_eq!(0.0, rect2.y);
@@ -105,7 +107,7 @@ fn layout_row_horizontal() {
         assert_eq!(output2[i].h, items[i].get_bounds().h);
     }
 
-    let rect3 = layout.layout_row(&mut items, 0, 2, &bounds);
+    let rect3 = layout.layout_row(&mut items, 0, 3, &bounds);
 
     assert_eq!(4.0, rect3.x);
     assert_eq!(0.0, rect3.y);
@@ -130,12 +132,10 @@ fn layout_row_vertical() {
         Box::new(MapItem::new_from_size_and_order(4.0, 0)),
     ];
 
-    let output1 = vec![
-        Rect::new_from_points(0.0, 0.0, 4.0, 1.5)
-    ];
+    let output1 = vec![Rect::new_from_points(0.0, 0.0, 4.0, 1.5)];
     let output2 = vec![
         Rect::new_from_points(0.0, 0.0, 2.0, 3.0),
-        Rect::new_from_points(2.0, 0.0, 2.0, 3.0)
+        Rect::new_from_points(2.0, 0.0, 2.0, 3.0),
     ];
     let output3 = vec![
         Rect::new_from_points(0.0, 0.0, 1.5, 4.0),
@@ -143,7 +143,7 @@ fn layout_row_vertical() {
         Rect::new_from_points(3.0, 0.0, 1.0, 4.0),
     ];
 
-    let rect1 = layout.layout_row(&mut items, 0, 0, &bounds);
+    let rect1 = layout.layout_row(&mut items, 0, 1, &bounds);
 
     assert_eq!(0.0, rect1.x);
     assert_eq!(1.5, rect1.y);
@@ -155,7 +155,7 @@ fn layout_row_vertical() {
     assert_eq!(output1[0].w, items[0].get_bounds().w);
     assert_eq!(output1[0].h, items[0].get_bounds().h);
 
-    let rect2 = layout.layout_row(&mut items, 0, 1, &bounds);
+    let rect2 = layout.layout_row(&mut items, 0, 2, &bounds);
 
     assert_eq!(0.0, rect2.x);
     assert_eq!(3.0, rect2.y);
@@ -169,7 +169,7 @@ fn layout_row_vertical() {
         assert_eq!(output2[i].h, items[i].get_bounds().h);
     }
 
-    let rect3 = layout.layout_row(&mut items, 0, 2, &bounds);
+    let rect3 = layout.layout_row(&mut items, 0, 3, &bounds);
 
     assert_eq!(0.0, rect3.x);
     assert_eq!(4.0, rect3.y);

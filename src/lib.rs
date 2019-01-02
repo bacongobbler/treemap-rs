@@ -47,7 +47,9 @@ pub struct Rect {
 }
 
 impl Clone for Rect {
-    fn clone(&self) -> Rect { *self }
+    fn clone(&self) -> Rect {
+        *self
+    }
 }
 
 impl Rect {
@@ -88,7 +90,9 @@ pub struct MapItem {
 }
 
 impl Clone for MapItem {
-    fn clone(&self) -> MapItem { *self }
+    fn clone(&self) -> MapItem {
+        *self
+    }
 }
 
 impl MapItem {
@@ -153,9 +157,7 @@ pub struct TreemapLayout {
 
 impl TreemapLayout {
     pub fn new() -> TreemapLayout {
-        TreemapLayout {
-            mid: 0,
-        }
+        TreemapLayout { mid: 0 }
     }
 
     pub fn layout_items(&mut self, mut items: &mut Vec<Box<Mappable>>, bounds: Rect) {
@@ -164,7 +166,13 @@ impl TreemapLayout {
         self.layout_items_at(&mut items, 0, end, bounds);
     }
 
-    pub fn layout_items_at(&mut self, mut items: &mut Vec<Box<Mappable>>, start: usize, end: usize, bounds: Rect) {
+    pub fn layout_items_at(
+        &mut self,
+        mut items: &mut Vec<Box<Mappable>>,
+        start: usize,
+        end: usize,
+        bounds: Rect,
+    ) {
         if start > end {
             return;
         }
@@ -174,7 +182,9 @@ impl TreemapLayout {
 
         self.mid = start;
         while self.mid < end {
-            if self.highest_aspect(&mut items, start, self.mid, &bounds) > self.highest_aspect(&mut items, start, self.mid + 1, &bounds) {
+            if self.highest_aspect(&mut items, start, self.mid, &bounds)
+                > self.highest_aspect(&mut items, start, self.mid + 1, &bounds)
+            {
                 self.mid += 1;
             } else {
                 let new_bounds = self.layout_row(&mut items, start, self.mid, &bounds);
@@ -183,10 +193,16 @@ impl TreemapLayout {
         }
     }
 
-    pub fn highest_aspect(&self, mut items: &mut Vec<Box<Mappable>>, start: usize, end: usize, bounds: &Rect) -> f64 {
+    pub fn highest_aspect(
+        &self,
+        mut items: &mut Vec<Box<Mappable>>,
+        start: usize,
+        end: usize,
+        bounds: &Rect,
+    ) -> f64 {
         self.layout_row(&mut items, start, end, bounds);
         let mut max = std::f64::MIN;
-        for i in start..end+1 {
+        for i in start..end {
             let aspect_ratio = items[i].get_bounds().aspect_ratio();
             if aspect_ratio > max {
                 max = aspect_ratio;
@@ -195,14 +211,20 @@ impl TreemapLayout {
         max
     }
 
-    pub fn layout_row(&self, items: &mut Vec<Box<Mappable>>, start: usize, end: usize, bounds: &Rect) -> Rect {
+    pub fn layout_row(
+        &self,
+        items: &mut Vec<Box<Mappable>>,
+        start: usize,
+        end: usize,
+        bounds: &Rect,
+    ) -> Rect {
         let is_horizontal = bounds.w > bounds.h;
         let total = bounds.w * bounds.h;
         let row_size = self.total_item_size_with_range(&items, start, end);
         let row_ratio = row_size / total;
         let mut offset = 0.0;
 
-        for i in start..end+1 {
+        for i in start..end {
             let mut r = Rect::new();
             let ratio = items[i].get_size() / row_size;
 
@@ -245,7 +267,12 @@ impl TreemapLayout {
         sum
     }
 
-    pub fn total_item_size_with_range(&self, items: &Vec<Box<Mappable>>, start: usize, end: usize) -> f64 {
+    pub fn total_item_size_with_range(
+        &self,
+        items: &Vec<Box<Mappable>>,
+        start: usize,
+        end: usize,
+    ) -> f64 {
         let mut sum = 0.0;
         for i in start..end {
             sum += items[i].get_size();
@@ -261,6 +288,6 @@ impl Layout for TreemapLayout {
     }
 }
 
-pub fn sort_descending(mut items: &mut Vec<Box<Mappable>>) {
+pub fn sort_descending(items: &mut Vec<Box<Mappable>>) {
     items.sort_by(|a, b| b.get_size().partial_cmp(&a.get_size()).unwrap());
 }
