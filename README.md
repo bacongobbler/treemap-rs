@@ -51,7 +51,7 @@ Add `treemap` to Cargo.toml:
 
 ```toml
 [dependencies]
-treemap = "0.2.0"
+treemap = "0.2.1"
 ```
 
 Then, in `src/main.rs`:
