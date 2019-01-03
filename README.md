@@ -78,7 +78,7 @@ fn main() {
 
     for item in items {
         let item_bounds = item.get_bounds();
-        println!("x={} y={} w={} h={}", i, item_bounds.x, item_bounds.y, item_bounds.w, item_bounds.h);
+        println!("x={} y={} w={} h={}", item_bounds.x, item_bounds.y, item_bounds.w, item_bounds.h);
         println!("------");
     }
 }
