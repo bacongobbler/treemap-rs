@@ -38,12 +38,23 @@ This can be useful for a variety of purposes:
 
 ## Example
 
+This example will tesselate a rectangle with a width of 6 and a height of 4 with seven rectangles with areas 6, 6, 4, 3, 2, 2, and 1, then display each rectangle's top-left corner's x and y position within the larger rectangle (the bounds), as well as their respective height and width.
+
+To start, generate a new project:
+
+```console
+$ cargo new --bin treemap-example
+     Created binary (application) `treemap-example` package
+```
+
 Add `treemap` to Cargo.toml:
 
 ```toml
 [dependencies]
-treemap = "0.1.0"
+treemap = "0.2.0"
 ```
+
+Then, in `src/main.rs`:
 
 ```rust
 extern crate treemap;
@@ -54,22 +65,20 @@ fn main() {
     let mut layout = TreemapLayout::new();
     let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
     let mut items: Vec<Box<Mappable>> = vec![
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(4.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(3.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(2.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(2.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(1.0, 0)),
+        Box::new(MapItem::new_with_size(6.0)),
+        Box::new(MapItem::new_with_size(6.0)),
+        Box::new(MapItem::new_with_size(4.0)),
+        Box::new(MapItem::new_with_size(3.0)),
+        Box::new(MapItem::new_with_size(2.0)),
+        Box::new(MapItem::new_with_size(2.0)),
+        Box::new(MapItem::new_with_size(1.0)),
     ];
 
-    layout.layout_items_at(&mut items, 0, 6, bounds);
+    layout.layout_items(&mut items, bounds);
 
-    for i in 0..7 {
-        println!("Item {} x={}", i, items[i].get_bounds().x);
-        println!("Item {} y={}", i, items[i].get_bounds().y);
-        println!("Item {} w={}", i, items[i].get_bounds().w);
-        println!("Item {} h={}", i, items[i].get_bounds().h);
+    for item in items {
+        let item_bounds = item.get_bounds();
+        println!("x={} y={} w={} h={}", i, item_bounds.x, item_bounds.y, item_bounds.w, item_bounds.h);
         println!("------");
     }
 }

@@ -3,27 +3,62 @@ extern crate treemap;
 use treemap::{MapItem, Mappable, Rect, TreemapLayout};
 
 #[test]
-fn treemap() {
-    let mut layout = TreemapLayout::new();
+fn layout_items() {
     let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
     let mut items: Vec<Box<Mappable>> = vec![
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(4.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(3.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(2.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(2.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(1.0, 0)),
+        Box::new(MapItem::new_with_size(6.0)),
+        Box::new(MapItem::new_with_size(6.0)),
+        Box::new(MapItem::new_with_size(4.0)),
+        Box::new(MapItem::new_with_size(3.0)),
+        Box::new(MapItem::new_with_size(2.0)),
+        Box::new(MapItem::new_with_size(2.0)),
+        Box::new(MapItem::new_with_size(1.0)),
     ];
 
-    layout.layout_items_at(&mut items, 0, 6, bounds);
+    let expected_output = vec![
+        Rect::new_from_points(0.0, 0.0, 3.1304347826086953, 2.0),
+        Rect::new_from_points(0.0, 2.0, 3.1304347826086953, 2.0),
+        Rect::new_from_points(
+            3.1304347826086953,
+            0.0,
+            2.8695652173913047,
+            1.4545454545454546,
+        ),
+        Rect::new_from_points(
+            3.1304347826086953,
+            1.4545454545454546,
+            2.459627329192547,
+            1.5272727272727271,
+        ),
+        Rect::new_from_points(
+            3.1304347826086953,
+            2.9818181818181815,
+            2.459627329192547,
+            1.0181818181818183,
+        ),
+        Rect::new_from_points(
+            5.590062111801242,
+            1.4545454545454546,
+            0.4099378881987579,
+            1.6969696969696968,
+        ),
+        Rect::new_from_points(
+            5.590062111801242,
+            3.1515151515151514,
+            0.4099378881987579,
+            0.8484848484848484,
+        ),
+    ];
 
-    for i in 0..7 {
-        println!("Item {} x={}", i, items[i].get_bounds().x);
-        println!("Item {} y={}", i, items[i].get_bounds().y);
-        println!("Item {} w={}", i, items[i].get_bounds().w);
-        println!("Item {} h={}", i, items[i].get_bounds().h);
-        println!("------");
+    let mut layout = TreemapLayout::new();
+    layout.layout_items(&mut items, bounds);
+
+    for i in 0..items.len() {
+        let item_bounds = items[i].get_bounds();
+        assert_eq!(expected_output[i].x, item_bounds.x);
+        assert_eq!(expected_output[i].y, item_bounds.y);
+        assert_eq!(expected_output[i].w, item_bounds.w);
+        assert_eq!(expected_output[i].h, item_bounds.h);
     }
 }
 
@@ -37,149 +72,10 @@ fn sort_descending() {
     ];
     let mut items: Vec<Box<Mappable>> = Default::default();
     for i in input.iter() {
-        items.push(Box::new(MapItem::new_from_size_and_order(*i, 0)));
+        items.push(Box::new(MapItem::new_with_size(*i)));
     }
     treemap::sort_descending(&mut items);
     for i in 0..items.len() {
         assert_eq!(output[i], items[i].get_size());
-    }
-}
-
-#[test]
-fn highest_aspect() {
-    let layout = TreemapLayout::new();
-    let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
-    let mut items: Vec<Box<Mappable>> = vec![
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(4.0, 0)),
-    ];
-
-    assert_eq!(4.0 / 1.5, layout.highest_aspect(&mut items, 0, 1, &bounds));
-    assert_eq!(3.0 / 2.0, layout.highest_aspect(&mut items, 0, 2, &bounds));
-    assert_eq!(4.0 / 1.0, layout.highest_aspect(&mut items, 0, 3, &bounds));
-}
-
-#[test]
-fn layout_row_horizontal() {
-    let layout = TreemapLayout::new();
-    let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
-    let mut items: Vec<Box<Mappable>> = vec![
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(4.0, 0)),
-    ];
-
-    let output1 = vec![Rect::new_from_points(0.0, 0.0, 1.5, 4.0)];
-    let output2 = vec![
-        Rect::new_from_points(0.0, 0.0, 3.0, 2.0),
-        Rect::new_from_points(0.0, 2.0, 3.0, 2.0),
-    ];
-    let output3 = vec![
-        Rect::new_from_points(0.0, 0.0, 4.0, 1.5),
-        Rect::new_from_points(0.0, 1.5, 4.0, 1.5),
-        Rect::new_from_points(0.0, 3.0, 4.0, 1.0),
-    ];
-
-    let rect1 = layout.layout_row(&mut items, 0, 1, &bounds);
-
-    assert_eq!(1.5, rect1.x);
-    assert_eq!(0.0, rect1.y);
-    assert_eq!(4.5, rect1.w);
-    assert_eq!(4.0, rect1.h);
-
-    assert_eq!(output1[0].x, items[0].get_bounds().x);
-    assert_eq!(output1[0].y, items[0].get_bounds().y);
-    assert_eq!(output1[0].w, items[0].get_bounds().w);
-    assert_eq!(output1[0].h, items[0].get_bounds().h);
-
-    let rect2 = layout.layout_row(&mut items, 0, 2, &bounds);
-
-    assert_eq!(3.0, rect2.x);
-    assert_eq!(0.0, rect2.y);
-    assert_eq!(3.0, rect2.w);
-    assert_eq!(4.0, rect2.h);
-
-    for i in 0..2 {
-        assert_eq!(output2[i].x, items[i].get_bounds().x);
-        assert_eq!(output2[i].y, items[i].get_bounds().y);
-        assert_eq!(output2[i].w, items[i].get_bounds().w);
-        assert_eq!(output2[i].h, items[i].get_bounds().h);
-    }
-
-    let rect3 = layout.layout_row(&mut items, 0, 3, &bounds);
-
-    assert_eq!(4.0, rect3.x);
-    assert_eq!(0.0, rect3.y);
-    assert_eq!(2.0, rect3.w);
-    assert_eq!(4.0, rect3.h);
-
-    for i in 0..2 {
-        assert_eq!(output3[i].x, items[i].get_bounds().x);
-        assert_eq!(output3[i].y, items[i].get_bounds().y);
-        assert_eq!(output3[i].w, items[i].get_bounds().w);
-        assert_eq!(output3[i].h, items[i].get_bounds().h);
-    }
-}
-
-#[test]
-fn layout_row_vertical() {
-    let layout = TreemapLayout::new();
-    let bounds = Rect::new_from_points(0.0, 0.0, 4.0, 6.0);
-    let mut items: Vec<Box<Mappable>> = vec![
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(6.0, 0)),
-        Box::new(MapItem::new_from_size_and_order(4.0, 0)),
-    ];
-
-    let output1 = vec![Rect::new_from_points(0.0, 0.0, 4.0, 1.5)];
-    let output2 = vec![
-        Rect::new_from_points(0.0, 0.0, 2.0, 3.0),
-        Rect::new_from_points(2.0, 0.0, 2.0, 3.0),
-    ];
-    let output3 = vec![
-        Rect::new_from_points(0.0, 0.0, 1.5, 4.0),
-        Rect::new_from_points(1.5, 0.0, 1.5, 4.0),
-        Rect::new_from_points(3.0, 0.0, 1.0, 4.0),
-    ];
-
-    let rect1 = layout.layout_row(&mut items, 0, 1, &bounds);
-
-    assert_eq!(0.0, rect1.x);
-    assert_eq!(1.5, rect1.y);
-    assert_eq!(4.0, rect1.w);
-    assert_eq!(4.5, rect1.h);
-
-    assert_eq!(output1[0].x, items[0].get_bounds().x);
-    assert_eq!(output1[0].y, items[0].get_bounds().y);
-    assert_eq!(output1[0].w, items[0].get_bounds().w);
-    assert_eq!(output1[0].h, items[0].get_bounds().h);
-
-    let rect2 = layout.layout_row(&mut items, 0, 2, &bounds);
-
-    assert_eq!(0.0, rect2.x);
-    assert_eq!(3.0, rect2.y);
-    assert_eq!(4.0, rect2.w);
-    assert_eq!(3.0, rect2.h);
-
-    for i in 0..2 {
-        assert_eq!(output2[i].x, items[i].get_bounds().x);
-        assert_eq!(output2[i].y, items[i].get_bounds().y);
-        assert_eq!(output2[i].w, items[i].get_bounds().w);
-        assert_eq!(output2[i].h, items[i].get_bounds().h);
-    }
-
-    let rect3 = layout.layout_row(&mut items, 0, 3, &bounds);
-
-    assert_eq!(0.0, rect3.x);
-    assert_eq!(4.0, rect3.y);
-    assert_eq!(4.0, rect3.w);
-    assert_eq!(2.0, rect3.h);
-
-    for i in 0..2 {
-        assert_eq!(output3[i].x, items[i].get_bounds().x);
-        assert_eq!(output3[i].y, items[i].get_bounds().y);
-        assert_eq!(output3[i].w, items[i].get_bounds().w);
-        assert_eq!(output3[i].h, items[i].get_bounds().h);
     }
 }
