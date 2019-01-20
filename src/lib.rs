@@ -33,18 +33,12 @@ pub trait Layout {
     fn layout(&mut self, model: &mut Box<MapModel>, bounds: Rect);
 }
 
-#[derive(Debug, PartialEq, Copy)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
     pub w: f64,
     pub h: f64,
-}
-
-impl Clone for Rect {
-    fn clone(&self) -> Rect {
-        *self
-    }
 }
 
 impl Rect {
