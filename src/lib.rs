@@ -1,4 +1,3 @@
-use ord_subset::OrdSubsetIterExt;
 
 /// Interface representing an object that can be placed
 /// in a treemap layout.
@@ -72,8 +71,7 @@ impl Rect {
     }
 
     pub fn aspect_ratio(&self) -> f64 {
-        let s = [self.w / self.h, self.h / self.w];
-        *s.iter().ord_subset_max().unwrap()
+        (self.w / self.h).max(self.h / self.w)
     }
 }
 
