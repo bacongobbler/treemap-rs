@@ -41,6 +41,12 @@ pub struct Rect {
     pub h: f64,
 }
 
+impl Default for Rect {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Rect {
     pub fn new() -> Rect {
         Rect {
