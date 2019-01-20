@@ -5,15 +5,11 @@
 /// # Properties
 ///
 /// - size: corresponds to area in map.
-/// - order: the sort order of the item.
-/// - depth: the depth in hierarchy.
 /// - bounds: the bounding rectangle of the item in the map.
 pub trait Mappable {
     fn get_size(&self) -> f64;
-    fn set_size(&mut self, size: f64);
     fn get_bounds(&self) -> &Rect;
     fn set_bounds_from_rect(&mut self, bounds: Rect);
-    fn set_bounds_from_points(&mut self, x: f64, y: f64, w: f64, h: f64);
 }
 
 /// Model object used by MapLayout to represent data for a treemap.
@@ -105,23 +101,12 @@ impl Mappable for MapItem {
         self.size
     }
 
-    fn set_size(&mut self, size: f64) {
-        self.size = size;
-    }
-
     fn get_bounds(&self) -> &Rect {
         &self.bounds
     }
 
     fn set_bounds_from_rect(&mut self, bounds: Rect) {
         self.bounds = bounds;
-    }
-
-    fn set_bounds_from_points(&mut self, x: f64, y: f64, w: f64, h: f64) {
-        self.bounds.x = x;
-        self.bounds.y = y;
-        self.bounds.w = w;
-        self.bounds.h = h;
     }
 }
 
