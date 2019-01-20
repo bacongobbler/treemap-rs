@@ -6,20 +6,20 @@
 /// - size: corresponds to area in map.
 /// - bounds: the bounding rectangle of the item in the map.
 pub trait Mappable {
-    fn get_size(&self) -> f64;
-    fn get_bounds(&self) -> &Rect;
-    fn set_bounds_from_rect(&mut self, bounds: Rect);
+    fn size(&self) -> f64;
+    fn bounds(&self) -> &Rect;
+    fn set_bounds(&mut self, bounds: Rect);
 }
 
 impl Mappable for Box<dyn Mappable> {
-    fn get_size(&self) -> f64 {
-        (**self).get_size()
+    fn size(&self) -> f64 {
+        (**self).size()
     }
-    fn get_bounds(&self) -> &Rect {
-        (**self).get_bounds()
+    fn bounds(&self) -> &Rect {
+        (**self).bounds()
     }
-    fn set_bounds_from_rect(&mut self, bounds: Rect) {
-        (**self).set_bounds_from_rect(bounds)
+    fn set_bounds(&mut self, bounds: Rect) {
+        (**self).set_bounds(bounds)
     }
 }
 
@@ -47,7 +47,7 @@ impl Rect {
         }
     }
 
-    pub fn new_from_points(x: f64, y: f64, w: f64, h: f64) -> Rect {
+    pub fn from_points(x: f64, y: f64, w: f64, h: f64) -> Rect {
         Rect {
             x: x,
             y: y,
@@ -73,10 +73,10 @@ pub struct MapItem {
 
 impl MapItem {
     pub fn new() -> MapItem {
-        MapItem::new_with_size(1.0)
+        MapItem::with_size(1.0)
     }
 
-    pub fn new_with_size(size: f64) -> MapItem {
+    pub fn with_size(size: f64) -> MapItem {
         MapItem {
             size: size,
             bounds: Rect::new(),
@@ -85,15 +85,15 @@ impl MapItem {
 }
 
 impl Mappable for MapItem {
-    fn get_size(&self) -> f64 {
+    fn size(&self) -> f64 {
         self.size
     }
 
-    fn get_bounds(&self) -> &Rect {
+    fn bounds(&self) -> &Rect {
         &self.bounds
     }
 
-    fn set_bounds_from_rect(&mut self, bounds: Rect) {
+    fn set_bounds(&mut self, bounds: Rect) {
         self.bounds = bounds;
     }
 }
@@ -107,19 +107,16 @@ impl TreemapLayout {
 
     pub fn layout_items<T: Mappable>(&self, items: &mut [T], bounds: Rect) {
         sort_descending(items);
-        let end = items.len();
-        self.layout_items_at(items, 0, end, bounds);
+        self.layout_items_at(items, bounds);
     }
 
     fn layout_items_at<T: Mappable>(
         &self,
         items: &mut [T],
-        start: usize,
-        end: usize,
         bounds: Rect,
     ) {
-        if end - start <= 2 {
-            self.layout_row(&mut items[start..end], bounds);
+        if items.len() <= 2 {
+            self.layout_row(items, bounds);
             return;
         }
 
@@ -128,16 +125,16 @@ impl TreemapLayout {
         let w = bounds.w;
         let h = bounds.h;
 
-        let total = self.total_item_size(&items[start..end - 1]);
-        let mut mid = start;
-        let a = items[start].get_size() / total;
+        let total = self.total_item_size(&items[0..items.len() - 1]);
+        let mut mid = 0;
+        let a = items[0].size() / total;
         let mut b = a;
 
         let (mid, rect, rect2) = if w < h {
             // height/width
-            while mid < end {
+            while mid < items.len() {
                 let aspect = norm_aspect(h, w, a, b);
-                let q = items[mid].get_size() / total;
+                let q = items[mid].size() / total;
                 if norm_aspect(h, w, a, b + q) > aspect {
                     break;
                 }
@@ -146,14 +143,14 @@ impl TreemapLayout {
             }
             (
                 mid,
-                Rect::new_from_points(x, y, w, h * b),
-                Rect::new_from_points(x, y + h * b, w, h * (1.0 - b)),
+                Rect::from_points(x, y, w, h * b),
+                Rect::from_points(x, y + h * b, w, h * (1.0 - b)),
             )
         } else {
             // width/height
-            while mid < end {
+            while mid < items.len() {
                 let aspect = norm_aspect(w, h, a, b);
-                let q = items[mid].get_size() / total;
+                let q = items[mid].size() / total;
                 if norm_aspect(w, h, a, b + q) > aspect {
                     break;
                 }
@@ -162,15 +159,14 @@ impl TreemapLayout {
             }
             (
                 mid,
-                Rect::new_from_points(x, y, w * b, h),
-                Rect::new_from_points(x + w * b, y, w * (1.0 - b), h),
+                Rect::from_points(x, y, w * b, h),
+                Rect::from_points(x + w * b, y, w * (1.0 - b), h),
             )
         };
-        if mid < end {
-            self.layout_row(&mut items[start..=mid], rect);
-            if mid + 1 < end {
-                self.layout_items_at(items, mid + 1, end, rect2);
-            }
+        if mid < items.len() {
+            let (before, after) = items.split_at_mut(mid + 1);
+            self.layout_row(before, rect);
+            self.layout_items_at(after, rect2);
         }
     }
 
@@ -181,7 +177,7 @@ impl TreemapLayout {
 
         for item in items {
             let mut r = Rect::new();
-            let b = item.get_size() / total;
+            let b = item.size() / total;
 
             if is_horizontal {
                 r.x = bounds.x + bounds.w * a;
@@ -194,18 +190,18 @@ impl TreemapLayout {
                 r.y = bounds.y + bounds.h * a;
                 r.h = bounds.h * b;
             }
-            item.set_bounds_from_rect(r);
+            item.set_bounds(r);
             a += b;
         }
     }
 
     fn total_item_size<T: Mappable>(&self, items: &[T]) -> f64 {
-        items.iter().map(|i| i.get_size()).sum()
+        items.iter().map(|i| i.size()).sum()
     }
 }
 
 fn sort_descending<T: Mappable>(items: &mut [T]) {
-    items.sort_by(|a, b| b.get_size().partial_cmp(&a.get_size()).unwrap());
+    items.sort_by(|a, b| b.size().partial_cmp(&a.size()).unwrap());
 }
 
 fn norm_aspect(big: f64, small: f64, a: f64, b: f64) -> f64 {
@@ -231,10 +227,10 @@ fn test_sort_descending() {
     ];
     let mut items: Vec<Box<dyn Mappable>> = Default::default();
     for i in input.iter() {
-        items.push(Box::new(MapItem::new_with_size(*i)));
+        items.push(Box::new(MapItem::with_size(*i)));
     }
     sort_descending(&mut items);
     for i in 0..items.len() {
-        assert_eq!(output[i], items[i].get_size());
+        assert_eq!(output[i], items[i].size());
     }
 }

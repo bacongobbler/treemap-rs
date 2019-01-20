@@ -17,6 +17,6 @@ fn new_rect() {
 fn aspect_ratio() {
     let rect = Rect::new();
     assert_eq!(rect.aspect_ratio(), 1.0);
-    let rect2 = Rect::new_from_points(1.0, 1.0, 1.0, 5.0);
+    let rect2 = Rect::from_points(1.0, 1.0, 1.0, 5.0);
     assert_eq!(rect2.aspect_ratio(), 5.0);
 }
