@@ -1,11 +1,11 @@
-extern crate treemap;
+use treemap;
 
 use treemap::{MapItem, Mappable, Rect, TreemapLayout};
 
 #[test]
 fn layout_items() {
     let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
-    let mut items: Vec<Box<Mappable>> = vec![
+    let mut items: Vec<Box<dyn Mappable>> = vec![
         Box::new(MapItem::new_with_size(6.0)),
         Box::new(MapItem::new_with_size(6.0)),
         Box::new(MapItem::new_with_size(4.0)),
@@ -50,7 +50,7 @@ fn layout_items() {
         ),
     ];
 
-    let mut layout = TreemapLayout::new();
+    let layout = TreemapLayout::new();
     layout.layout_items(&mut items, bounds);
 
     for i in 0..items.len() {
@@ -59,23 +59,5 @@ fn layout_items() {
         assert_eq!(expected_output[i].y, item_bounds.y);
         assert_eq!(expected_output[i].w, item_bounds.w);
         assert_eq!(expected_output[i].h, item_bounds.h);
-    }
-}
-
-#[test]
-fn sort_descending() {
-    let input = [
-        24.0, 2.0, 45.0, 20.0, 56.0, 75.0, 2.0, 56.0, 99.0, 53.0, 12.0,
-    ];
-    let output = [
-        99.0, 75.0, 56.0, 56.0, 53.0, 45.0, 24.0, 20.0, 12.0, 2.0, 2.0,
-    ];
-    let mut items: Vec<Box<Mappable>> = Default::default();
-    for i in input.iter() {
-        items.push(Box::new(MapItem::new_with_size(*i)));
-    }
-    treemap::sort_descending(&mut items);
-    for i in 0..items.len() {
-        assert_eq!(output[i], items[i].get_size());
     }
 }

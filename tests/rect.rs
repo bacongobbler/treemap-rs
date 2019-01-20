@@ -1,5 +1,3 @@
-extern crate treemap;
-
 use treemap::Rect;
 
 #[test]
