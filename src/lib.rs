@@ -1,4 +1,3 @@
-use ord_subset::OrdSubsetIterExt;
 
 /// Interface representing an object that can be placed
 /// in a treemap layout.
@@ -34,7 +33,7 @@ pub trait Layout {
     fn layout(&mut self, model: &mut Box<MapModel>, bounds: Rect);
 }
 
-#[derive(Debug, PartialEq, Copy)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
@@ -42,9 +41,9 @@ pub struct Rect {
     pub h: f64,
 }
 
-impl Clone for Rect {
-    fn clone(&self) -> Rect {
-        *self
+impl Default for Rect {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -72,8 +71,7 @@ impl Rect {
     }
 
     pub fn aspect_ratio(&self) -> f64 {
-        let s = [self.w / self.h, self.h / self.w];
-        *s.iter().ord_subset_max().unwrap()
+        (self.w / self.h).max(self.h / self.w)
     }
 }
 

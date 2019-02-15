@@ -10,5 +10,3 @@ readme = "README.md"
 license = "MIT"
 edition = "2018"
 
-[dependencies]
-ord_subset = "3"
