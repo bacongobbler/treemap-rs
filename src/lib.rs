@@ -1,36 +1,26 @@
-
 /// Interface representing an object that can be placed
 /// in a treemap layout.
 ///
 /// # Properties
 ///
 /// - size: corresponds to area in map.
-/// - order: the sort order of the item.
-/// - depth: the depth in hierarchy.
 /// - bounds: the bounding rectangle of the item in the map.
 pub trait Mappable {
-    fn get_size(&self) -> f64;
-    fn set_size(&mut self, size: f64);
-    fn get_bounds(&self) -> &Rect;
-    fn set_bounds_from_rect(&mut self, bounds: Rect);
-    fn set_bounds_from_points(&mut self, x: f64, y: f64, w: f64, h: f64);
+    fn size(&self) -> f64;
+    fn bounds(&self) -> &Rect;
+    fn set_bounds(&mut self, bounds: Rect);
 }
 
-/// Model object used by MapLayout to represent data for a treemap.
-pub trait MapModel {
-    /// Get the list of items in this model. It returns an array of the Mappable objects in this MapModel.
-    fn get_items(&self) -> Vec<Box<Mappable>>;
-}
-
-/// The interface for the treemap layout algorithm.
-pub trait Layout {
-    /// Arrange the items in the given MapModel to fill the given rectangle.
-    ///
-    /// # Parameters
-    ///
-    /// - model: The MapModel.
-    /// - bounds: The bounding rectangle for the layout.
-    fn layout(&mut self, model: &mut Box<MapModel>, bounds: Rect);
+impl Mappable for Box<dyn Mappable> {
+    fn size(&self) -> f64 {
+        (**self).size()
+    }
+    fn bounds(&self) -> &Rect {
+        (**self).bounds()
+    }
+    fn set_bounds(&mut self, bounds: Rect) {
+        (**self).set_bounds(bounds)
+    }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -57,7 +47,7 @@ impl Rect {
         }
     }
 
-    pub fn new_from_points(x: f64, y: f64, w: f64, h: f64) -> Rect {
+    pub fn from_points(x: f64, y: f64, w: f64, h: f64) -> Rect {
         Rect {
             x: x,
             y: y,
@@ -66,33 +56,27 @@ impl Rect {
         }
     }
 
-    pub fn new_from_rect(rect: Rect) -> Rect {
-        Rect::new_from_points(rect.x, rect.y, rect.w, rect.h)
-    }
-
     pub fn aspect_ratio(&self) -> f64 {
-        (self.w / self.h).max(self.h / self.w)
+        if self.h != 0. && self.w != 0. {
+            (self.w / self.h).max(self.h / self.w)
+        } else {
+            0.
+        }
     }
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct MapItem {
     size: f64,
     bounds: Rect,
 }
 
-impl Clone for MapItem {
-    fn clone(&self) -> MapItem {
-        *self
-    }
-}
-
 impl MapItem {
     pub fn new() -> MapItem {
-        MapItem::new_with_size(1.0)
+        MapItem::with_size(1.0)
     }
 
-    pub fn new_with_size(size: f64) -> MapItem {
+    pub fn with_size(size: f64) -> MapItem {
         MapItem {
             size: size,
             bounds: Rect::new(),
@@ -101,55 +85,38 @@ impl MapItem {
 }
 
 impl Mappable for MapItem {
-    fn get_size(&self) -> f64 {
+    fn size(&self) -> f64 {
         self.size
     }
 
-    fn set_size(&mut self, size: f64) {
-        self.size = size;
-    }
-
-    fn get_bounds(&self) -> &Rect {
+    fn bounds(&self) -> &Rect {
         &self.bounds
     }
 
-    fn set_bounds_from_rect(&mut self, bounds: Rect) {
+    fn set_bounds(&mut self, bounds: Rect) {
         self.bounds = bounds;
-    }
-
-    fn set_bounds_from_points(&mut self, x: f64, y: f64, w: f64, h: f64) {
-        self.bounds.x = x;
-        self.bounds.y = y;
-        self.bounds.w = w;
-        self.bounds.h = h;
     }
 }
 
 pub struct TreemapLayout {}
 
 impl TreemapLayout {
-    pub fn new() -> TreemapLayout {
-        TreemapLayout {}
+    pub fn new() -> Self {
+        Self {}
     }
 
-    pub fn layout_items(&mut self, mut items: &mut Vec<Box<Mappable>>, bounds: Rect) {
-        sort_descending(&mut items);
-        let end = items.len() - 1;
-        self.layout_items_at(&mut items, 0, end, bounds);
+    pub fn layout_items<T: Mappable>(&self, items: &mut [T], bounds: Rect) {
+        sort_descending(items);
+        self.layout_items_at(items, bounds);
     }
 
-    pub fn layout_items_at(
-        &mut self,
-        mut items: &mut Vec<Box<Mappable>>,
-        start: usize,
-        end: usize,
+    fn layout_items_at<T: Mappable>(
+        &self,
+        items: &mut [T],
         bounds: Rect,
     ) {
-        if start > end {
-            return;
-        }
-        if end - start < 2 {
-            self.layout_row(&mut items, start, end, &bounds);
+        if items.len() <= 2 {
+            self.layout_row(items, bounds);
             return;
         }
 
@@ -158,74 +125,59 @@ impl TreemapLayout {
         let w = bounds.w;
         let h = bounds.h;
 
-        let total = self.total_item_size_with_range(items, start, end);
-        let mut mid = start;
-        let a = items[start].get_size() / total;
+        let total = self.total_item_size(&items[0..items.len() - 1]);
+        let mut mid = 0;
+        let a = items[0].size() / total;
         let mut b = a;
 
-        if w < h {
+        let (mid, rect, rect2) = if w < h {
             // height/width
-            while mid <= end {
+            while mid < items.len() {
                 let aspect = norm_aspect(h, w, a, b);
-                let q = items[mid].get_size() / total;
+                let q = items[mid].size() / total;
                 if norm_aspect(h, w, a, b + q) > aspect {
                     break;
                 }
                 mid += 1;
                 b += q;
             }
-            self.layout_row(
-                &mut items,
-                start,
+            (
                 mid,
-                &Rect::new_from_points(x, y, w, h * b),
-            );
-            self.layout_items_at(
-                &mut items,
-                mid + 1,
-                end,
-                Rect::new_from_points(x, y + h * b, w, h * (1.0 - b)),
-            );
+                Rect::from_points(x, y, w, h * b),
+                Rect::from_points(x, y + h * b, w, h * (1.0 - b)),
+            )
         } else {
             // width/height
-            while mid <= end {
+            while mid < items.len() {
                 let aspect = norm_aspect(w, h, a, b);
-                let q = items[mid].get_size() / total;
+                let q = items[mid].size() / total;
                 if norm_aspect(w, h, a, b + q) > aspect {
                     break;
                 }
                 mid += 1;
                 b += q;
             }
-            self.layout_row(
-                &mut items,
-                start,
+            (
                 mid,
-                &Rect::new_from_points(x, y, w * b, h),
-            );
-            self.layout_items_at(
-                &mut items,
-                mid + 1,
-                end,
-                Rect::new_from_points(x + w * b, y, w * (1.0 - b), h),
-            );
+                Rect::from_points(x, y, w * b, h),
+                Rect::from_points(x + w * b, y, w * (1.0 - b), h),
+            )
+        };
+        if mid < items.len() {
+            let (before, after) = items.split_at_mut(mid + 1);
+            self.layout_row(before, rect);
+            self.layout_items_at(after, rect2);
         }
     }
 
-    pub fn layout_row(
-        &self,
-        items: &mut Vec<Box<Mappable>>,
-        start: usize,
-        end: usize,
-        bounds: &Rect,
-    ) {
+    fn layout_row<T: Mappable>(&self, items: &mut [T], bounds: Rect) {
         let is_horizontal = bounds.w > bounds.h;
-        let total = self.total_item_size_with_range(&items, start, end + 1);
+        let total = self.total_item_size(items);
         let mut a = 0.0;
 
-        for i in start..end + 1 {
+        for item in items {
             let mut r = Rect::new();
-            let b = items[i].get_size() / total;
+            let b = item.size() / total;
 
             if is_horizontal {
                 r.x = bounds.x + bounds.w * a;
@@ -238,42 +190,18 @@ impl TreemapLayout {
                 r.y = bounds.y + bounds.h * a;
                 r.h = bounds.h * b;
             }
-            items[i].set_bounds_from_rect(r);
+            item.set_bounds(r);
             a += b;
         }
     }
 
-    pub fn total_item_size(&self, items: &Vec<Box<Mappable>>) -> f64 {
-        let mut sum = 0.0;
-        for item in items {
-            sum += item.get_size();
-        }
-        sum
-    }
-
-    pub fn total_item_size_with_range(
-        &self,
-        items: &Vec<Box<Mappable>>,
-        start: usize,
-        end: usize,
-    ) -> f64 {
-        let mut sum = 0.0;
-        for i in start..end {
-            sum += items[i].get_size();
-        }
-        sum
+    fn total_item_size<T: Mappable>(&self, items: &[T]) -> f64 {
+        items.iter().map(|i| i.size()).sum()
     }
 }
 
-impl Layout for TreemapLayout {
-    fn layout(&mut self, model: &mut Box<MapModel>, bounds: Rect) {
-        let mut items = model.get_items();
-        self.layout_items(&mut items, bounds)
-    }
-}
-
-pub fn sort_descending(items: &mut Vec<Box<Mappable>>) {
-    items.sort_by(|a, b| b.get_size().partial_cmp(&a.get_size()).unwrap());
+fn sort_descending<T: Mappable>(items: &mut [T]) {
+    items.sort_by(|a, b| b.size().partial_cmp(&a.size()).unwrap());
 }
 
 fn norm_aspect(big: f64, small: f64, a: f64, b: f64) -> f64 {
@@ -286,4 +214,23 @@ fn norm_aspect(big: f64, small: f64, a: f64, b: f64) -> f64 {
 
 fn aspect(big: f64, small: f64, a: f64, b: f64) -> f64 {
     return (big * b) / (small * a / b);
+}
+
+
+#[test]
+fn test_sort_descending() {
+    let input = [
+        24.0, 2.0, 45.0, 20.0, 56.0, 75.0, 2.0, 56.0, 99.0, 53.0, 12.0,
+    ];
+    let output = [
+        99.0, 75.0, 56.0, 56.0, 53.0, 45.0, 24.0, 20.0, 12.0, 2.0, 2.0,
+    ];
+    let mut items: Vec<Box<dyn Mappable>> = Default::default();
+    for i in input.iter() {
+        items.push(Box::new(MapItem::with_size(*i)));
+    }
+    sort_descending(&mut items);
+    for i in 0..items.len() {
+        assert_eq!(output[i], items[i].size());
+    }
 }
