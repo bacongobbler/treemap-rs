@@ -63,21 +63,21 @@ use treemap::{MapItem, Mappable, Rect, TreemapLayout};
 
 fn main() {
     let mut layout = TreemapLayout::new();
-    let bounds = Rect::new_from_points(0.0, 0.0, 6.0, 4.0);
+    let bounds = Rect::from_points(0.0, 0.0, 6.0, 4.0);
     let mut items: Vec<Box<Mappable>> = vec![
-        Box::new(MapItem::new_with_size(6.0)),
-        Box::new(MapItem::new_with_size(6.0)),
-        Box::new(MapItem::new_with_size(4.0)),
-        Box::new(MapItem::new_with_size(3.0)),
-        Box::new(MapItem::new_with_size(2.0)),
-        Box::new(MapItem::new_with_size(2.0)),
-        Box::new(MapItem::new_with_size(1.0)),
+        Box::new(MapItem::with_size(6.0)),
+        Box::new(MapItem::with_size(6.0)),
+        Box::new(MapItem::with_size(4.0)),
+        Box::new(MapItem::with_size(3.0)),
+        Box::new(MapItem::with_size(2.0)),
+        Box::new(MapItem::with_size(2.0)),
+        Box::new(MapItem::with_size(1.0)),
     ];
 
     layout.layout_items(&mut items, bounds);
 
     for item in items {
-        let item_bounds = item.get_bounds();
+        let item_bounds = item.bounds();
         println!("x={} y={} w={} h={}", item_bounds.x, item_bounds.y, item_bounds.w, item_bounds.h);
         println!("------");
     }
