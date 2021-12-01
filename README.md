@@ -51,14 +51,12 @@ Add `treemap` to Cargo.toml:
 
 ```toml
 [dependencies]
-treemap = "*"
+treemap = "0.3"
 ```
 
 Then, in `src/main.rs`:
 
 ```rust
-extern crate treemap;
-
 use treemap::{MapItem, Mappable, Rect, TreemapLayout};
 
 fn main() {
