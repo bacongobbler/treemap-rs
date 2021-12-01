@@ -1,7 +1,7 @@
 [package]
 name = "treemap"
 version = "0.3.2"
-authors = ["Matthew Fisher <matt.fisher@microsoft.com>"]
+authors = ["Matthew Fisher <matt.fisher@fishworks.io>"]
 description = "Implementation of the Squarified Treemap algorithm"
 documentation = "https://github.com/bacongobbler/treemap-rs#readme"
 homepage = "https://github.com/bacongobbler/treemap-rs"
