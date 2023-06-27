@@ -60,9 +60,9 @@ Then, in `src/main.rs`:
 use treemap::{MapItem, Mappable, Rect, TreemapLayout};
 
 fn main() {
-    let mut layout = TreemapLayout::new();
+    let layout = TreemapLayout::new();
     let bounds = Rect::from_points(0.0, 0.0, 6.0, 4.0);
-    let mut items: Vec<Box<Mappable>> = vec![
+    let mut items: Vec<Box<dyn Mappable>> = vec![
         Box::new(MapItem::with_size(6.0)),
         Box::new(MapItem::with_size(6.0)),
         Box::new(MapItem::with_size(4.0)),
